@@ -1,0 +1,48 @@
+use std::fs;
+use std::net::TcpListener;
+use std::net::TcpStream;
+use std::io::prelude::*;
+
+
+fn main() {
+    //绑定本地8080端口
+    let listener = 
+    TcpListener::bind("127.0.0.1:8080").unwrap();  
+
+    //监听TCP请求
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+
+        handle_connection(stream);
+    }
+}
+
+//GET为HTTP的get请求
+//POST为HTTP的post请求
+//ERROR为错误
+//COMMON为非HTTP请求
+enum RequestMode {
+    GET(string),
+    POST(string),
+    ERROR,
+    COMMON
+}
+
+//处理客户端发送过来的请求
+fn handle_connection(mut stream: TcpStream){
+    let mut buffer = [0u8; 1024];
+
+    stream.read(&mut buffer).unwrap();
+    
+    //查找对应文件index.html
+    let contents = fs::read_to_string("index.html").unwrap();
+    
+    let response = format!(
+        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+        contents.len(),
+        contents
+    );
+    
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
+}
